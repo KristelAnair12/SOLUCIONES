@@ -1,0 +1,3 @@
+# 3: Modifique rolo de este capítulo para que quien ejecute el programa pueda guardar su archivo de libreta telefónica en cualquier directorio, no solo en el directorio personal. Esto se puede lograr solicitando al usuario que configure una variable exportada llamada PHONEBOOK con el nombre del archivo de libreta telefónica antes de ejecutar rolo. Asegúrese de que esta variable esté configurada en un archivo válido. Si la variable no está configurada, haga que el programa asuma que el archivo de libreta telefónica está en el directorio personal del usuario, como antes.
+
+
