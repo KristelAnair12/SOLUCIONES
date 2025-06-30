@@ -75,8 +75,9 @@ Que desea hacer?
 3. Eliminar a alguien de la agenda telefonica
 4. Modificar una entrada en la agenda telefonica
 5. Listar todos los nombres y numeros en la agenda telefonica
-6. Salir del programa
-Por favor seleccione una opcion (1-6): '
+6. Programa isYes
+7. Salir del programa
+Por favor seleccione una opcion (1-7): '
 
     # Leer y procesar la seleccion
 
@@ -116,7 +117,12 @@ Por favor seleccione una opcion (1-6): '
 
         5) ./listall;;
 
-        6) exit 0;;
+        6) echo "Programa isYes"
+           isYes        
+           ;;
+
+                
+        7) exit 0;;
 
         *) echo "Opcion invalida";;
 
