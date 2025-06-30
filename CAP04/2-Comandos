@@ -1,0 +1,26 @@
+¿Cuál será el efecto de los siguientes comandos?
+
+# Busca sesiones de usuario activas cuyo nombre contenga la cadena 'mary'
+who | grep 'mary'
+
+# Busca usuarios conectados cuyo nombre de sesión comience exactamente con 'mary'
+who | grep '^mary'
+
+# Busca la palabra Unix o unix en los archivos que empiezan con "ch" y un solo carácter adicional dentro del directorio actual
+grep '[Uu]nix' ch?/*
+
+# Lista los archivos en formato largo y ordena el resultado ascendentemente según el tamaño (columna 5)
+ls -l | sort +4n
+
+# Elimina todas las líneas vacías del archivo 'text' y guarda el resultado en 'text.out'
+sed '/^$/d' text > text.out
+
+# Busca la palabra Unix o unix y le añade (TM) a continuación, en todo el texto, guardando el resultado en 'text.out'
+sed 's/\([Uu]nix\)/\1(TM)/g' text > text.out
+
+# Muestra los caracteres de la posición 12 a la 16 de la salida del comando date
+date | cut -c12-16
+
+# Muestra los caracteres de la posición 5 a 11 y desde la 25 en adelante de la fecha actual,
+# agregando una coma después de cualquier grupo de uno o dos dígitos
+date | cut -c5-11,25- | sed 's/\([0-9]\{1,2\}\)/\1,/'
