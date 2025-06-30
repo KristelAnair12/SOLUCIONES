@@ -1,0 +1,30 @@
+# Cuenta cuántos archivos y directorios visibles (no ocultos) hay en el directorio actual
+ls | wc -l
+
+# Borra todos los archivos visibles cuyo nombre tenga exactamente 4 caracteres
+rm ????
+
+# Cuenta la cantidad de sesiones de usuario abiertas en el sistema en este momento
+who | wc -l
+
+# Mueve todos los contenidos del directorio 'progs' hacia /users/steve/backup
+mv progs/* /users/steve/backup
+
+# Cuenta cuántos archivos con extensión .c hay en el directorio actual
+ls *.c | wc -l
+
+# Elimina cualquier archivo del directorio actual que termine con la extensión .o
+rm *.o
+
+# Ordena alfabéticamente la lista de usuarios conectados y la muestra
+who | sort
+
+# Cambia al directorio personal del usuario (home) y muestra su ruta completa
+cd; pwd
+
+# Copia el archivo memo1 al directorio superior manteniendo el mismo nombre
+cp memo1 ..
+
+# Ejecuta 'plotdata' en segundo plano, enviando cualquier error que aparezca en la salida de errores estándar al archivo 'errors'
+plotdata 2>errors &
+
