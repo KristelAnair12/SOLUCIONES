@@ -1,0 +1,4 @@
+# Escribe un programa llamado "whos" para mostrar una lista ordenada de los usuarios conectados. Solo muestra los nombres de usuario y ninguna otra información. Escribe el programa y pruébalo.
+
+# Display a sorted list of the logged-in users
+who | cut -d' ' -f1 | sort -u
