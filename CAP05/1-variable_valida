@@ -1,0 +1,32 @@
+¿Cuáles de los siguientes son nombres de variables válidos?
+
+# Válido: empieza con letra, solo contiene letras mayúsculas/minúsculas
+XxXxXx
+
+# Inválido: comienza con un dígito, lo cual no está permitido como primer carácter
+12345
+
+# Inválido: el punto no se permite en nombres de variable estándar
+file.name
+
+# Válido: empieza con letra, usa guiones bajos (permitido)
+file_name
+
+# Válido: empieza con letra, termina en dígito (aceptado)
+file1
+
+# Válido: el guion bajo solo es un nombre de variable válido
+_
+
+# Válido: comienza con letra mayúscula, sin símbolos
+HOMEDIR
+
+# Válido: comienza con guion bajo, seguido de letras (aceptado)
+_date
+
+# Inválido: contiene el guion medio (-), no permitido en nombres de variable
+x0-9
+
+# Válido: empieza con letra mayúscula, solo contiene letras minúsculas adicionales
+Slimit
+
