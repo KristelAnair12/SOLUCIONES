@@ -1,2 +1,0 @@
-who | cut -d ' ' -f1 | grep -E '^.{4,}' | sort -u
-

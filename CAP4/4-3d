@@ -1,3 +1,0 @@
-# d. Enumere todos los archivos de su directorio en orden decreciente de tamaño de archivo.
-
-ls -rS | tr ' ' '\n'
