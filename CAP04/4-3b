@@ -1,0 +1,2 @@
+#cat /etc/passwd | cut -d: -f1,3 | grep ':.{3,}' | cut -d: -f1
+cat /etc/passwd | cut -d: -f1,3 | grep ':.\{3,\}' | cut -d: -f1
