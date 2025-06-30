@@ -1,0 +1,30 @@
+# Muestra todos los nombres visibles en el directorio actual (sin restricción de longitud o extensión)
+echo *
+
+# Archivos o carpetas cuyo último carácter no sea un dígito (0–9)
+echo *[!0-9]
+
+# Nombres que empiezan con “m” seguido de cualquier letra de a–d o f–z (excluyendo la e), y luego cualquier secuencia
+echo m[a-df-z]*
+
+# Elementos cuyos nombres empiezan con letra mayúscula A–Z
+echo [A-Z]*
+
+# Todo nombre que inicie con “jan”
+echo jan*
+
+# Nombres que contengan al menos un punto con texto a ambos lados (como extensiones)
+echo *.*
+
+# Archivos o carpetas con exactamente 5 caracteres en su nombre
+echo ?????
+
+# Elementos que terminan en “02” (precedidos de cualquier texto)
+echo *02
+
+# Nombres que inicien con jan/feb/mar y exactamente dos caracteres más
+echo jan?? feb?? mar??
+
+# Nombres cuyo primer carácter sea f, j o m; el segundo a o e; el tercero b, n o r; seguidos de cualquier texto
+echo [fjm][ae][bnr]*
+
