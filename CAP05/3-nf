@@ -1,0 +1,4 @@
+#Escribe un programa llamado nf para mostrar la cantidad de archivos en tu directorio actual. Escribe el programa y pruébalo.
+
+# Display the number of files in your current directory
+ls | wc -l
