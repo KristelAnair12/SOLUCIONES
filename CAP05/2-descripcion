@@ -1,0 +1,17 @@
+¿Cuál sería el efecto de los siguientes comandos?
+
+# Lista el contenido del directorio padre de la ruta almacenada en la variable $let
+ls $let/..
+
+# Añade (con append) el contenido del archivo sys.A dentro del directorio apuntado por $prop
+# al archivo no.JSK ubicado en el directorio referenciado por $let
+cat $prop/sys.A >> $let/no.JSK
+
+# Muestra todos los archivos y subdirectorios dentro de la ruta apuntada por $let
+echo $let/*
+
+# Copia el archivo no.JSK (contenido en la ruta $let) al directorio que señala $progs
+cp $let/no.JSK $progs
+
+# Cambia el directorio actual al directorio que señala la variable $prop
+cd $prop
