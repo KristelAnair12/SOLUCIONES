@@ -1,0 +1,14 @@
+#Escribe los comandos para contar la cantidad de caracteres almacenados en la variable de shell text. Luego, escribe los comandos para contar todos los caracteres alfabéticos. (Pista: Usa sed y wc). ¿Qué sucede con las secuencias de caracteres especiales, como \n, si se almacenan dentro del texto?
+
+# Contar caracteres en la variable text
+text='A rose by any other name !@#$\n'
+
+# echo añade un salto de línea extra
+echo "$text" | wc -m
+
+# Elimina todo lo que no sea un carácter alfabético con sed, y luego cuenta cuántos
+# [:alpha:] equivale a [A-Za-z] en ASCII
+echo "$text" | sed 's/[^[:alpha:]]*//g' | wc -m
+
+# Verificar salto de línea añadido
+echo 'asdf' | od -c
