@@ -1,0 +1,7 @@
+#Escriba un programa llamado unsuffix que elimine los caracteres dados como segundo argumento del final del nombre del archivo dado como primer argumento
+#unsuffix memo1.sv .sv
+#Debería cambiar el nombre de memo1.sv a memo1. Asegúrese de eliminar los caracteres del final, así
+#unsuffix test1test test
+
+newname=$(echo "$1" | sed "s/\($2$\)//")
+mv "$1" "$newname"
