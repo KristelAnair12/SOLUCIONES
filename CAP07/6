@@ -1,0 +1,19 @@
+#Escriba un programa llamado suffix que cambie el nombre de un archivo agregando los caracteres dados como segundo argumento al final del nombre del archivo dado como primer argumento.
+
+# Comprobar que se hayan ingresado dos argumentos
+if [ $# -ne 2 ]; then
+    echo "Uso: <archivo> <sufijo>"
+    echo "Ejemplo: Kristel Anair"
+    exit 1
+fi
+
+# Verificar que el archivo exista
+if [ ! -e "$1" ]; then
+    echo "Error: el archivo '$1' no existe."
+    exit 2
+fi
+
+# Renombrar el archivo agregando el sufijo
+mv "$1" "$1$2"
+
+echo "El archivo ha sido renombrado como: $1$2"
