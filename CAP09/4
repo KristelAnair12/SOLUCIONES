@@ -1,0 +1,98 @@
+#Agregue una opción -n a mon que invierte la función de monitoreo. Entonces
+
+#mon -n sandy
+
+#Comprueba si se han producido cierres de sesión arenosos en el sistema y 
+
+#mon -n -f /tmp/dataout &
+
+#Comprueba periódicamente la eliminación del archivo especificado.
+
+#!/bin/bash
+
+fileopt=FALSE
+mailopt=FALSE
+invert=FALSE
+
+interval=60
+filename=""
+user=""
+inv_pref=""
+
+# Procesar las opciones de línea de comandos
+while getopts mnt:f: option
+do
+    case "$option" in
+	f)  fileopt=TRUE
+	    filename=$OPTARG;;
+	m)  mailopt=TRUE;;
+	n)  invert=TRUE
+	    inv_pref=!;;
+	t)  interval=$OPTARG;;
+	\?) echo "Uso: waitfor [-m] [-n] [-f archivo] [-t n] [usuario]"
+	    echo " -m notifica por correo electrónico"
+	    echo " -n invierte la condición (esperar desconexión o borrado)"
+	    echo " -f indica archivo a monitorear"
+	    echo " -t intervalo de espera en segundos"
+	    exit 1;;
+    esac
+done
+
+# Caso: esperar usuario
+if [ "$fileopt" = "FALSE" ]
+then
+    if [ "$OPTIND" -gt "$#" ]
+    then
+	echo "¡Falta el nombre de usuario!"
+	exit 2
+    else
+	shiftcount=$((OPTIND - 1))
+	shift $shiftcount
+	user=$1
+    fi
+fi
+
+# Definir condición
+if [ "$fileopt" = "FALSE" ]
+then
+    # condición para usuario conectado
+    condition="who | awk '{print \$1}' | grep -qx \"$user\""
+else
+    # condición para existencia de archivo
+    condition="[ -f \"$filename\" ]"
+fi
+
+# Esperar hasta que se cumpla la condición (o su inversa con -n)
+until eval $inv_pref "$condition"
+do
+    sleep "$interval"
+done
+
+# Construir mensaje
+if [ "$fileopt" = "FALSE" ]
+then
+    tty=$(who | awk -v usr="$user" '$1==usr {print $2; exit}')
+    if [ "$invert" = "FALSE" ]
+    then
+	msg="El usuario $user inició sesión en $tty"
+    else
+	msg="El usuario $user cerró su sesión"
+    fi
+else
+    if [ "$invert" = "FALSE" ]
+    then
+	msg="El archivo $filename ahora existe"
+    else
+	msg="El archivo $filename ya no existe"
+    fi
+fi
+
+# Mostrar por consola o enviar correo
+if [ "$mailopt" = "FALSE" ]
+then
+    echo "$msg"
+else
+    runner=$(whoami)
+    echo "$msg" | mail "$runner"
+fi
+
