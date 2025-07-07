@@ -1,0 +1,176 @@
+# rolo - programa tipo rolodex para buscar,
+#        añadir, eliminar y cambiar entradas de la agenda telefónica
+
+# Establece PHONEBOOK para que apunte al archivo de la agenda telefónica
+# y lo exporta para que otros programas lo conozcan
+# si ya está establecido al inicio, lo deja tal como está
+
+: ${PHONEBOOK:="$HOME/phonebook"}
+export PHONEBOOK
+if [ ! -e "$PHONEBOOK" ]
+then
+    echo "$PHONEBOOK no existe!"
+    printf "¿Deseas que lo cree por ti (s/n)? "
+    read answer
+
+    if [ "$answer" != s ]
+    then
+	exit 1
+    fi
+
+    > $PHONEBOOK || exit 1    # salir si la creación falla
+fi
+
+# Manejar opción de línea de comandos para enviar correo
+if [ "$1" = "-m" ]
+then
+    if [ -z "$2" ]
+    then
+        echo "Uso: rolo -m nombre"
+        exit 1
+    fi
+    
+    entry=$(grep -i "$2" "$PHONEBOOK")
+    if [ -z "$entry" ]
+    then
+        echo "No se encontró entrada para $2 en la agenda"
+        exit 1
+    fi
+    
+    email=$(echo "$entry" | grep -o 'mail:[^[:space:]]*' | cut -d: -f2)
+    if [ -z "$email" ]
+    then
+        printf "No se encontró correo para $2. Por favor ingrese la dirección de correo: "
+        read email
+    fi
+    
+    TEMP_MSG="/tmp/rolo_msg_$$.txt"
+    echo "Para: $email" > "$TEMP_MSG"
+    echo "Asunto: " >> "$TEMP_MSG"
+    echo "" >> "$TEMP_MSG"
+    ${EDITOR:-vi} "$TEMP_MSG"
+    
+    if [ -s "$TEMP_MSG" ]
+    then
+        sendmail "$email" < "$TEMP_MSG"
+        echo "Correo enviado a $email"
+    else
+        echo "Mensaje vacío, no se envió el correo"
+    fi
+    rm -f "$TEMP_MSG"
+    exit 0
+fi
+
+# Si se proporcionan argumentos, realizar una búsqueda
+
+if [ "$#" -ne 0 ]
+then
+    ./lu -i "$@"
+    exit
+fi
+
+# Establece una trampa en interrupción (tecla DELETE) para continuar el bucle
+
+trap "continue" 2
+
+# Bucle hasta que el usuario seleccione 'salir'
+
+while true
+do
+
+    #
+    # Mostrar menú
+    #
+
+    printf '
+
+¿Qué deseas hacer?
+1. Buscar a alguien
+2. Añadir a alguien a la agenda
+3. Eliminar a alguien de la agenda
+4. Cambiar una entrada en la agenda
+5. Listar todos los nombres y números en la agenda
+6. Enviar correo a alguien
+7. Salir del programa
+Por favor selecciona una de las opciones anteriores (1-7): '
+
+    # Leer y procesar la selección
+
+    read choice
+    echo
+    case "$choice" in
+
+	1) printf "Introduce el nombre a buscar: "
+	   read name
+	   if [ -z "$name" ]
+	   then
+	       echo "Búsqueda ignorada"
+	   else
+	       ./lu -i "$name"
+	   fi;;
+
+	2) ./add;;
+
+	3) printf "Introduce el nombre a eliminar: "
+	   read name
+	   if [ -z "$name" ]
+	   then
+	       echo "Eliminación ignorada"
+	   else
+	       ./rem -i "$name"
+	   fi;;
+
+	4) printf "Introduce el nombre a cambiar: "
+	   read name
+
+	   if [ -z "$name" ]
+	   then
+	       echo "Cambio ignorado"
+	   else
+	       ./change -i "$name"
+	   fi;;
+
+	5) ./listall;;
+
+	6) printf "Introduce el nombre a quien deseas enviar correo: "
+	   read name
+	   if [ -z "$name" ]
+	   then
+	       echo "Operación de correo ignorada"
+	   else
+	       entry=$(grep -i "$name" "$PHONEBOOK")
+	       if [ -z "$entry" ]
+	       then
+	           echo "No se encontró entrada para $name en la agenda"
+	       else
+	           email=$(echo "$entry" | grep -o 'mail:[^[:space:]]*' | cut -d: -f2)
+	           if [ -z "$email" ]
+	           then
+	               printf "No se encontró correo para $name. Por favor ingrese la dirección: "
+	               read email
+	           fi
+	           
+	           TEMP_MSG="/tmp/rolo_msg_$$.txt"
+	           echo "Para: $email" > "$TEMP_MSG"
+	           echo "Asunto: " >> "$TEMP_MSG"
+	           echo "" >> "$TEMP_MSG"
+	           ${EDITOR:-vi} "$TEMP_MSG"
+	           
+	           if [ -s "$TEMP_MSG" ]
+	           then
+	               sendmail "$email" < "$TEMP_MSG"
+	               echo "Correo enviado a $email"
+	           else
+	               echo "Mensaje vacío, no se envió el correo"
+	           fi
+	           rm -f "$TEMP_MSG"
+	       fi
+	   fi;;
+
+	7) exit 0;;
+
+	*) echo "Opción inválida";;
+
+    esac
+done
+
