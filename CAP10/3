@@ -1,0 +1,139 @@
+#Escribe un programa llamado mymv que, con el comando "mv", haga lo mismo que mycp con el comando "cp". ¿Cuántos cambios tuviste que hacer en mycp para crear este nuevo programa?
+
+numargs=
+numfrom=-1
+filelist=
+copylist=
+missinglist=
+check_overwr=TRUE
+
+# Procesar opciones
+while getopts n option
+do
+    case "$option" in
+	n)  check_overwr=FALSE;; # -n para no preguntar sobre sobrescribir
+	\?) 
+	    echo "Uso: mymv [-n] ORIGEN DEST"
+	    echo "     mymv [-n] ORIGEN... DIRECTORIO"
+	    echo "  -n significa suprimir la verificación para evitar sobrescribir archivos"
+	    exit 1;;
+    esac
+done
+
+shiftcount=$((OPTIND - 1))
+shift $shiftcount
+numargs=$#
+
+# Procesar los argumentos, guardando todos menos el último en filelist
+while [ "$#" -gt 1 ]
+do
+    filelist="$filelist $1"
+    shift
+done
+
+to="$1"
+
+# Si solo un argumento, o si más de dos y el último argumento no es un directorio
+# mostrar error
+if [ "$numargs" -eq 1 -o "$numargs" -gt 2 -a ! -d "$to" ]
+then
+    echo "Uso: mymv [-n] ORIGEN DEST"
+    echo "     mymv [-n] ORIGEN... DIRECTORIO"
+    exit 1
+fi
+
+# Si cero argumentos, preguntar interactivamente
+if [ "$numargs" -eq 0 ]
+then
+    # Leer archivos origen
+    from=' '
+    while [ -n "$from" ]
+    do
+	printf 'Ingrese archivo origen (enter para finalizar):  '
+	read from
+	filelist="$filelist $from"
+
+	# quitar espacios al inicio
+	from=$(printf "$from" | sed "s/^[ \t]*//")
+	# contar cantidad de archivos origen
+	: $((numfrom += 1))
+    done
+    
+    # Verificar al menos un archivo origen
+    if [ $numfrom -eq 0 ]
+    then
+	echo "Error: se requiere al menos un archivo origen"
+	exit 1
+    fi
+
+    # Leer destino
+    printf 'Ingrese archivo destino:  '
+    read to
+    to=$(printf "$to" | sed "s/^[ \t]*//")
+    if [ ! -n $to ]
+    then
+	echo "Error: argumento inválido como destino"
+	exit 1
+    fi
+fi
+
+# Recorrer cada archivo en filelist
+for from in $filelist
+do
+    # Verificar que exista
+    if [ ! -f "$from" ]
+    then
+	missinglist="$missinglist $from"
+	continue
+    fi
+
+    # Verificar si destino es un directorio
+    if [ -d "$to" ]
+    then
+	tofile="$to/$(basename $from)"
+    else
+	tofile="$to"
+    fi
+
+    # Agregar a copylist si no existe en destino o si usuario confirma sobrescribir
+    if [ $check_overwr = TRUE -a -e "$tofile" ]
+    then
+	printf "$tofile ya existe; ¿sobrescribir (yes/no)?  "
+	read answer
+
+	if [ "$answer" = yes ]
+	then
+	    copylist="$copylist $from"
+	fi
+    else
+	copylist="$copylist $from"
+    fi
+done
+
+# Comprobar si hay archivos faltantes y preguntar si continuar
+if [ -n "$missinglist" ]
+then
+    echo "Los siguientes archivos no existen: $missinglist"
+    
+    if [ -n "$copylist" ]
+    then
+	printf "¿Se deben mover los archivos restantes (yes/no)?  "
+	read answer
+
+	if [ ! "$answer" = yes ]
+	then
+	    echo "Archivos no movidos"
+	    exit 0
+	fi
+    else
+	echo "No hay archivos restantes para mover"
+	exit 0
+    fi
+fi
+
+# Finalmente mover los archivos, asegurando que copylist no está vacío
+if [ -n "$copylist" ]
+then
+    mv $copylist $to     # proceder con el movimiento
+fi
+
