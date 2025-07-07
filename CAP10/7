@@ -1,0 +1,60 @@
+#Modifique el programa REM que usa rolo para que, si se encuentran varias entradas, el programa solicite al usuario que las elimine.
+#A continuación, se muestra una sesión de ejemplo:
+
+# $ rolo
+# ...
+# Please select one of the above (1-3): 3
+# Enter name to be removed: Susan
+# More than one match; please select the one to remove:
+# Susan Goldberg    Remove (y/n)? n
+# Susan Topple      Remove (y/n)? y
+
+# Si se pasan argumentos, entonces hacer la búsqueda
+if [ "$#" -ne 0 ]
+then
+    lu "$@"
+    exit
+fi
+
+validchoice=""
+
+# Bucle hasta que se haga una selección válida
+until [ -n "$validchoice" ]
+do
+
+    # Mostrar menú
+    printf '
+¿Qué le gustaría hacer?
+1. Buscar a alguien
+2. Agregar a alguien a la agenda telefónica
+3. Eliminar a alguien de la agenda telefónica
+Por favor seleccione una de las opciones (1-3): '
+
+    # Leer y procesar la selección
+    read choice
+    echo
+
+    case "$choice" in
+
+	1) printf "Ingrese el nombre a buscar: "
+	    read name
+	    lu "$name"
+	    validchoice=TRUE;;
+
+	2) printf "Ingrese el nombre a agregar: "
+	    read name
+	    printf "Ingrese el número: "
+	    read number
+	    add "$name" "$number"
+	    validchoice=TRUE;;
+
+	3) printf "Ingrese el nombre a eliminar: "
+	    read name
+	    rem "$name"
+	    validchoice=TRUE;;
+
+	*) echo "Opción inválida";;
+
+    esac
+done
+
