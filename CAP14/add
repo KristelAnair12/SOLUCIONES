@@ -1,0 +1,31 @@
+# Programa para agregar a alguien al archivo de la agenda telefónica
+
+echo "Escribe la nueva entrada"
+echo "Cuando termines, presiona solo Enter en una línea vacía."
+
+first=
+entry=
+
+while true
+do
+    printf ">> "
+    read line
+
+    if [ -n "$line" ]
+    then
+        entry="$entry$line^"
+
+        if [ -z "$first" ]
+        then
+            first=$line
+        fi
+    else
+        break
+    fi
+done
+
+echo "$entry" >> $PHONEBOOK
+sort -o $PHONEBOOK $PHONEBOOK
+echo
+echo "$first ha sido agregado(a) a la agenda telefónica"
+

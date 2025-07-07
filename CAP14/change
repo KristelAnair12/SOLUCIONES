@@ -1,0 +1,50 @@
+# Cambiar una entrada en la agenda telefónica
+
+name=$1
+
+# Obtener entradas coincidentes y guardar en un archivo temporal
+
+grep "$name" $PHONEBOOK > /tmp/matches$$
+if [ ! -s /tmp/matches$$ ]
+then
+    echo "No puedo encontrar a $name en la agenda telefónica"
+    exit 1
+fi
+
+# Mostrar las entradas coincidentes una por una y confirmar el cambio
+
+while read line
+do
+    ./display "$line"
+    printf "¿Cambiar esta entrada (s/n)? "
+    read answer < /dev/tty
+
+    if [ "$answer" = s ]
+    then
+        break
+    fi
+done < /tmp/matches$$
+
+rm /tmp/matches$$
+
+if [ "$answer" != s ]
+then
+    exit
+fi
+
+# Abrir editor en la entrada confirmada
+
+printf "$line" | tr '^' '\012' > /tmp/ed$$
+echo "Introduce los cambios con ${EDITOR:=/bin/ed}"
+trap "" 2  # no abortar si se presiona DELETE durante la edición
+$EDITOR /tmp/ed$$
+
+# Eliminar la entrada antigua e insertar la nueva
+
+grep -v "^$line$" $PHONEBOOK > /tmp/phonebook$$
+{ tr '\012' '^' < /tmp/ed$$; echo; } >> /tmp/phonebook$$
+# el último echo es para volver a poner el salto de línea final traducido por tr
+
+sort /tmp/phonebook$$ -o $PHONEBOOK
+rm /tmp/ed$$ /tmp/phonebook$$
+
