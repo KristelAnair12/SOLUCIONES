@@ -1,0 +1,98 @@
+# rolo - programa tipo rolodex para buscar,
+#        agregar, eliminar y cambiar entradas de la agenda telefónica
+
+# Establece PHONEBOOK para que apunte al archivo de la agenda
+# y expórtalo para que otros programas lo conozcan.
+# Si ya está definido al entrar, no se modifica.
+
+: ${PHONEBOOK:="$HOME/phonebook"}
+export PHONEBOOK
+if [ ! -e "$PHONEBOOK" ]
+then
+    echo "$PHONEBOOK no existe."
+    printf "¿Deseas que lo cree por ti (s/n)? "
+    read answer
+
+    if [ "$answer" != y ]
+    then
+        exit 1
+    fi
+
+    > $PHONEBOOK || exit 1    # salir si falla la creación
+fi
+
+# Si se proporcionan argumentos, entonces hacer una búsqueda
+
+if [ "$#" -ne 0 ]
+then
+    ./lu -i "$@"  # Agregado -i para búsqueda sin distinguir mayúsculas
+    exit
+fi
+
+# Establecer trampa en interrupción (tecla DELETE) para continuar el ciclo
+
+trap "continue" 2
+
+# Bucle hasta que el usuario seleccione 'salir'
+
+while true
+do
+
+    # Mostrar menú
+
+    printf '
+
+¿Qué te gustaría hacer?
+1. Buscar a alguien
+2. Agregar a alguien a la agenda
+3. Eliminar a alguien de la agenda
+4. Cambiar una entrada en la agenda
+5. Listar todos los nombres y números de la agenda
+6. Salir del programa
+Por favor selecciona una opción (1-6): '
+
+    # Leer y procesar la selección
+
+    read choice
+    echo
+    case "$choice" in
+
+        1) printf "Ingresa el nombre a buscar: "
+           read name
+           if [ -z "$name" ]
+           then
+               echo "Búsqueda ignorada"
+           else
+               ./lu -i "$name"  # Agregado -i para búsqueda sin distinguir mayúsculas
+           fi;;
+
+        2) ./add;;
+
+        3) printf "Ingresa el nombre a eliminar: "
+           read name
+           if [ -z "$name" ]
+           then
+               echo "Eliminación ignorada"
+           else
+               ./rem -i "$name"  # Agregado -i para eliminación sin distinguir mayúsculas
+           fi;;
+
+        4) printf "Ingresa el nombre a modificar: "
+           read name
+
+           if [ -z "$name" ]
+           then
+               echo "Modificación ignorada"
+           else
+               ./change -i "$name"  # Agregado -i para modificación sin distinguir mayúsculas
+           fi;;
+
+        5) ./listall;;
+
+        6) exit 0;;
+
+        *) echo "Opción inválida";;
+
+    esac
+done
+
