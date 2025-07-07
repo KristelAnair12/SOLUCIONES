@@ -1,0 +1,77 @@
+#Modifique lu para usar printf para imprimir el nombre y el número de teléfono de modo que se alineen en columnas para nombres de hasta 40 caracteres de longitud (Sugerencia: use cut –f y tenga en cuenta que los campos en la libreta telefónica están separados por tabulaciones).
+
+name=$1
+maxlen=0
+
+# Encontrar el número de entradas coincidentes
+
+match_text=$(grep "$name" phonebook)
+match_text_local=$match_text
+if [ ! -n "$match_text_local" ]
+then
+    # Nada que imprimir
+    exit 0
+fi
+
+n_matches=$(echo "$match_text_local" | wc -l)
+n_matches_local=$n_matches
+
+# Encontrar la longitud máxima del nombre
+
+# Cada iteración encuentra la longitud del nombre en la primera línea de
+# $match_text_local y la compara con la longitud máxima y actualiza el máximo
+# si es necesario; luego elimina la primera línea de $match_text_local
+while [ $n_matches_local -ge 1 ]
+do
+    # Obtener longitud del nombre actual
+    this_line=$(echo "$match_text_local" | head -1)
+    this_len=$(echo "$this_line" | cut -f1 | wc -m)
+    this_len=$(($this_len - 1))
+
+    # Encontrar la longitud máxima actual del nombre
+    if [ $this_len -gt $maxlen ]
+    then
+	maxlen=$this_len
+    fi
+
+    # La longitud máxima permitida es 40; salir si se alcanza
+    if [ $maxlen -ge 40 ]
+    then
+	maxlen=40
+	break
+    fi
+
+    # Eliminar la primera entrada
+    n_matches_local=$((n_matches_local - 1))
+    match_text_local=$(echo "$match_text_local" | tail -$n_matches_local)
+done
+
+# Imprimir cada línea formateada de coincidencias de la agenda telefónica
+
+# Reiniciar $match_text_local y $n_matches_local
+match_text_local=$match_text
+n_matches_local=$n_matches
+    
+while [ $n_matches_local -ge 1 ]
+do
+    # Obtener longitud del nombre actual
+    this_line=$(echo "$match_text_local" | head -1)
+    this_name=$(echo "$this_line" | cut -f1)
+    this_number=$(echo "$this_line" | cut -f2)
+
+    # Asegurar que el nombre no exceda 40 caracteres
+    this_len=$(echo "$this_name" | wc -m)
+    this_len=$((this_len - 1))
+    if [ $this_len -gt 40 ]
+    then
+	this_name="$(echo "$this_name" | cut -c1-37)..."
+    fi
+
+    # Imprimir línea con padding a la derecha
+    printf "%-*s    %s\n" $maxlen "$this_name" "$this_number"
+
+    # Eliminar la primera entrada
+    n_matches_local=$((n_matches_local - 1))
+    match_text_local=$(echo "$match_text_local" | tail -$n_matches_local)
+done
+
