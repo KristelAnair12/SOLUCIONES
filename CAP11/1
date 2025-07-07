@@ -1,0 +1,78 @@
+#Escriba un programa llamado myrm que tome como argumentos los nombres de los archivos a eliminar. Si la variable global MAXFILES está definida, tómela como el número máximo de archivos a eliminar sin cuestionar. Si la variable no está definida, use 10 como máximo. Si el número de archivos a eliminar excede este número, solicite confirmación al usuario antes de eliminar los archivos:
+
+# Ejemplo:
+# $ ls | wc -l
+# 25
+# $ myrm *                       Eliminarlos todos
+# ¿Remover 25 archivos (s/n)? n
+# Archivos no eliminados
+# $ MAXFILES=100 myrm *
+# $ ls
+# $                              Todos los archivos eliminados
+# Si MAXFILES se establece en cero, la verificación debe ser omitida.
+
+
+if [ $# -eq 0 ]; then
+    echo "Uso: myrm archivo..."
+    exit 1
+fi
+
+# Si no se define MAXFILES, usar 10 como valor predeterminado
+if [ -z "$MAXFILES" ]; then
+    MAXFILES=10
+fi
+
+# Verificar que MAXFILES sea entero positivo
+case $MAXFILES in
+    ''|*[!0-9]*)
+        echo "Error: se proporcionó un valor entero no positivo para MAXFILES"
+        exit 1
+        ;;
+esac
+
+rmlist=""
+missinglist=""
+n_remove=0
+
+# Construir lista de archivos a eliminar
+while [ "$#" -gt 0 ]; do
+    if [ -f "$1" ]; then
+        rmlist="$rmlist $1"
+        n_remove=$((n_remove + 1))
+    else
+        missinglist="$missinglist $1"
+    fi
+    shift
+done
+
+# Avisar si hay archivos inexistentes
+if [ -n "$missinglist" ]; then
+    echo "Los siguientes archivos no existen:$missinglist"
+    if [ -n "$rmlist" ]; then
+        printf "¿Se deben eliminar los archivos restantes (s/n)? "
+        read answer
+        if [ "$answer" != "s" ]; then
+            echo "Archivos no eliminados"
+            exit 0
+        fi
+    else
+        echo "No quedan archivos para eliminar"
+        exit 0
+    fi
+fi
+
+# Confirmar si se supera el límite y MAXFILES > 0
+if [ $n_remove -gt $MAXFILES ] && [ $MAXFILES -gt 0 ]; then
+    printf "¿Remover $n_remove archivos (s/n)? "
+    read answer
+    if [ "$answer" != "s" ]; then
+        echo "Archivos no eliminados"
+        exit 0
+    fi
+fi
+
+# Proceder con la eliminación
+if [ $n_remove -gt 0 ]; then
+    rm $rmlist
+fi
+
