@@ -1,0 +1,95 @@
+
+# Modificar wgrep para aceptar un número variable de archivos como argumentos
+# y preceder cada línea de salida con el nombre del archivo donde ocurre la coincidencia
+# al estilo de grep
+#
+# Uso: wgrep [-w winsize] patron archivo...
+
+# Determinar tamaño de ventana $winsize; por defecto es 1
+winsize=1
+while getopts w: option
+do
+    case "$option" in
+	w)  winsize=$OPTARG
+	    # Asegurarse de que se pasa un argumento entero a -w
+	    case $winsize in
+		# Verifica si está vacío o no es número
+		''|*[!0-9]*) 
+		    echo "argumento no entero para -w"
+		    exit 1;;
+		*)
+		    :;;
+	    esac;;
+	\?) echo "¡opción inválida!"
+	    echo "Uso: wgrep [-w winsize] patron archivo..."
+	    exit 1;;
+    esac
+done
+
+# Comprobar que al menos se proporcionó patrón y un archivo
+if [ "$OPTIND" -ge "$#" ]
+then
+    echo "¡falta el patrón o nombre de archivo!"
+    echo "Uso: wgrep [-w winsize] patron archivo..."
+    exit 2
+fi
+
+# Mover argumentos para pasar las opciones -w
+# guardar el patrón en $pattern y apuntar a la primera posición de archivos
+shiftcount=$((OPTIND - 1))
+shift $shiftcount
+pattern=$1
+shift 1
+
+# Validar cada archivo que se pasó como argumento
+for filename in "$@"
+do
+    if ! [ -f $filename ]
+    then
+	echo "archivo $filename no encontrado"
+	exit 1
+    fi
+done
+
+# Bucle para cada archivo proporcionado
+for filename in "$@"
+do
+    # Obtener número de líneas del archivo
+    filelen=$(wc -l "$filename" | cut -d ' ' -f1)
+
+    # Obtener las líneas donde aparecen coincidencias
+    matches=$(grep -n "$pattern" "$filename" | cut -d ':' -f1)
+    if [ ! -n "$matches" ]
+    then
+	continue
+    fi
+
+    # Encabezado que indica el inicio del archivo
+    echo "==================== inicio archivo $filename"
+    echo ""
+
+    # Para cada coincidencia, imprimir el contexto alrededor
+    # usando head y tail para extraer la ventana de líneas
+    for linum in $matches
+    do
+	# Si la coincidencia está cerca del final del archivo, ajustar la ventana
+	n_diff=$(($filelen - $linum))
+	if [ $winsize -le $n_diff ]
+	then
+	    taillen=$((2 * $winsize + 1))
+	else
+	    taillen=$(($winsize + 1 + $n_diff))
+	fi
+
+	echo '<-- inicio -->'
+	head -$(($linum + $winsize)) $filename | tail -$taillen
+	echo '<--  fin  -->'
+	echo ''
+    done
+
+    # Indicador de fin del archivo
+    echo "==================== fin archivo $filename"
+    echo ""
+    echo ""
+
+done # fin del bucle de coincidencias en archivos
