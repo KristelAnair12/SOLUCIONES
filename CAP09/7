@@ -1,0 +1,81 @@
+
+# Modificar wgrep para tomar una opción opcional -w que especifique el tamaño de ventana
+# Ejemplo:
+#     wgrep -w 3 UNIX texto
+# debería imprimir tres líneas antes y después de cada línea que contenga el patrón UNIX
+#
+# Uso: wgrep [-w winsize] patron archivo
+
+# Determinar tamaño de ventana $winsize; por defecto es 1
+winsize=1
+while getopts w: option
+do
+    case "$option" in
+
+	w)  winsize=$OPTARG
+	    # Asegurar que un argumento entero se pase a -w
+	    case $winsize in
+		# Verifica que no sea vacío ni algo que no sea dígito
+		''|*[!0-9]*) 
+		    echo "argumento no entero positivo para -w"
+		    exit 1;;
+		*)
+		    :;;
+	    esac;;
+	\?) echo "¡opción inválida!"
+	    echo "Uso: wgrep [-w winsize] patron archivo"
+	    exit 1;;
+    esac
+done
+
+# Guardar patrón en $pattern y archivo en $filename
+if [ "$OPTIND" -ge "$#" ]
+then
+    echo "¡falta el nombre del archivo o el patrón!"
+    echo "Uso: wgrep [-w winsize] patron archivo"
+    exit 2
+else
+    shiftcount=$((OPTIND - 1))
+    shift $shiftcount
+    pattern=$1
+    filename=$2
+fi
+
+# Validar el archivo
+if [ $# -ne 2 ]
+then
+    echo "Uso: wgrep patron archivo"
+    exit 1
+elif ! [ -f $filename ]
+then
+    echo "archivo $filename no encontrado"
+    exit 1
+fi
+
+# Obtener el número de líneas del archivo
+filelen=$(wc -l "$filename" | cut -d ' ' -f1)
+
+# Obtener los números de línea donde se encuentran coincidencias
+matches=$(grep -n "$pattern" "$filename" | cut -d ':' -f1)
+
+# Cada iteración del bucle imprime las líneas alrededor de la coincidencia
+# incluyendo $winsize líneas antes y $winsize después de la coincidencia.
+# Esto se logra con head para recortar hasta $linum + $winsize
+# y luego con tail para quedarse con la ventana completa
+for linum in $matches
+do
+    # Si la coincidencia está cerca del final del archivo, ajustar la ventana
+    n_diff=$(($filelen - $linum))
+    if [ $winsize -le $n_diff ]
+    then
+	taillen=$((2 * $winsize + 1))
+    else
+	taillen=$(($winsize + 1 + $n_diff))
+    fi
+
+    echo '<-- inicio -->'
+    head -$(($linum + $winsize)) $filename | tail -$taillen
+    echo '<--  fin  -->'
+    echo ''
+done
+
