@@ -1,0 +1,173 @@
+# rolo - programa tipo rolodex para buscar,
+#        añadir, eliminar y cambiar entradas de la agenda telefónica
+
+: ${PHONEBOOK:="$HOME/phonebook"}
+export PHONEBOOK
+if [ ! -e "$PHONEBOOK" ]
+then
+    echo "$PHONEBOOK no existe!"
+    printf "¿Deseas que lo cree por ti (s/n)? "
+    read answer
+
+    if [ "$answer" != s ]
+    then
+        exit 1
+    fi
+
+    > $PHONEBOOK || exit 1
+fi
+
+# Opciones de línea de comandos: -m (correo) y -f (archivo)
+if [ "$1" = "-m" ]
+then
+    if [ -z "$2" ]
+    then
+        echo "Uso: rolo -m nombre [-f archivo]"
+        exit 1
+    fi
+    
+    entry=$(grep -i "$2" "$PHONEBOOK")
+    if [ -z "$entry" ]
+    then
+        echo "No se encontró a $2 en la guía telefónica"
+        exit 1
+    fi
+    
+    email=$(echo "$entry" | grep -o 'mail:[^[:space:]]*' | cut -d: -f2)
+    if [ -z "$email" ]
+    then
+        printf "No se encontró correo para $2. Ingresa el correo: "
+        read email
+    fi
+
+    # Enviar desde archivo (-f)
+    if [ "$3" = "-f" ] && [ -n "$4" ]
+    then
+        if [ ! -f "$4" ]
+        then
+            echo "Error: El archivo $4 no existe"
+            exit 1
+        fi
+        sendmail "$email" < "$4"
+        echo "Correo enviado a $email usando el archivo $4"
+        exit 0
+    fi
+
+    # Modo editor interactivo (sin -f)
+    TEMP_MSG="/tmp/rolo_msg_$$.txt"
+    echo "Para: $email" > "$TEMP_MSG"
+    echo "Asunto: " >> "$TEMP_MSG"
+    echo "" >> "$TEMP_MSG"
+    ${EDITOR:-vi} "$TEMP_MSG"
+    
+    if [ -s "$TEMP_MSG" ]
+    then
+        sendmail "$email" < "$TEMP_MSG"
+        echo "Correo enviado a $email"
+    else
+        echo "Mensaje vacío, no se envió el correo"
+    fi
+    rm -f "$TEMP_MSG"
+    exit 0
+fi
+
+# Búsqueda normal si se pasan argumentos
+if [ "$#" -ne 0 ]
+then
+    ./lu -i "$@"
+    exit
+fi
+
+# Menú interactivo
+trap "continue" 2
+
+while true
+do
+    printf '
+
+¿Qué deseas hacer?
+1. Buscar a alguien
+2. Añadir a alguien a la agenda
+3. Eliminar a alguien de la agenda
+4. Cambiar una entrada en la agenda
+5. Listar todos los nombres y números en la agenda
+6. Enviar correo a alguien
+7. Salir del programa
+Selecciona una de las opciones anteriores (1-7): '
+
+    read choice
+    echo
+    case "$choice" in
+
+        1) printf "Introduce el nombre a buscar: "
+           read name
+           if [ -z "$name" ]
+           then
+               echo "Búsqueda ignorada"
+           else
+               ./lu -i "$name"
+           fi;;
+
+        2) ./add;;
+
+        3) printf "Introduce el nombre a eliminar: "
+           read name
+           if [ -z "$name" ]
+           then
+               echo "Eliminación ignorada"
+           else
+               ./rem -i "$name"
+           fi;;
+
+        4) printf "Introduce el nombre a cambiar: "
+           read name
+           if [ -z "$name" ]
+           then
+               echo "Cambio ignorado"
+           else
+               ./change -i "$name"
+           fi;;
+
+        5) ./listall;;
+
+        6) printf "Introduce el nombre del destinatario: "
+           read name
+           if [ -z "$name" ]
+           then
+               echo "Operación cancelada"
+           else
+               entry=$(grep -i "$name" "$PHONEBOOK")
+               if [ -z "$entry" ]
+               then
+                   echo "No se encontró a $name en la guía"
+               else
+                   email=$(echo "$entry" | grep -o 'mail:[^[:space:]]*' | cut -d: -f2)
+                   if [ -z "$email" ]
+                   then
+                       printf "No hay correo registrado. Ingresa el correo: "
+                       read email
+                   fi
+                   
+                   TEMP_MSG="/tmp/rolo_msg_$$.txt"
+                   echo "Para: $email" > "$TEMP_MSG"
+                   echo "Asunto: " >> "$TEMP_MSG"
+                   echo "" >> "$TEMP_MSG"
+                   ${EDITOR:-vi} "$TEMP_MSG"
+                   
+                   if [ -s "$TEMP_MSG" ]
+                   then
+                       sendmail "$email" < "$TEMP_MSG"
+                       echo "Correo enviado a $email"
+                   else
+                       echo "No se envió (mensaje vacío)"
+                   fi
+                   rm -f "$TEMP_MSG"
+               fi
+           fi;;
+
+        7) exit 0;;
+
+        *) echo "Opción inválida";;
+    esac
+done
+
