@@ -1,0 +1,19 @@
+# Verificar que $PHONEBOOK sea el nombre de un archivo válido
+
+if [ ! -n "$PHB_STANDALONE" ]
+then
+    . ./set_phb_loc
+fi
+
+# Añadir a alguien a la agenda telefónica
+
+if [ ! -n "$1" ]
+then
+    echo 'se debe proporcionar una entrada no nula para el nombre'
+    exit 0
+fi
+
+echo "$1	$2" >> "$PHONEBOOK"
+
+sort -u -o "$PHONEBOOK" "$PHONEBOOK"
+

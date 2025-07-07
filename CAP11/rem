@@ -1,0 +1,61 @@
+# Verificar que $PHONEBOOK sea el nombre de un archivo válido
+
+if [ ! -n "$PHB_STANDALONE" ]
+then
+    . ./set_phb_loc
+fi
+
+# Eliminar a alguien de la agenda telefónica
+
+if [ "$#" -ne 1 ]
+then
+    echo "Número incorrecto de argumentos."
+    echo "Uso: rem nombre"
+    exit 1
+fi
+
+name=$1
+
+# Encontrar el número de entradas coincidentes
+
+match_names=$(grep "$name" "$PHONEBOOK")
+# Se necesita condicional porque echo "$match_names" | wc -l no funciona bien con cadena vacía
+if [ -n "$match_names" ]
+then
+    matches=$(echo "$match_names" | wc -l)
+else
+    matches=0
+fi
+
+# Si hay más de una coincidencia, pedir confirmación para eliminar, si no eliminar directamente
+
+if [ "$matches" -gt 1 ]
+then
+
+    echo "Más de una coincidencia; por favor seleccione la que desea eliminar"
+
+    # Cada iteración pide confirmación para eliminar la entrada de la agenda
+    # correspondiente a la primera línea de $matches; luego elimina esa línea
+    while [ $matches -ge 1 ]
+    do
+	# Preguntar al usuario si desea eliminar la entrada
+	this_name=$(echo "$match_names" | head -1)
+	printf "$this_name	¿Eliminar (s/n)? "
+	read rem_choice
+	if [ "_$rem_choice" = _s ]
+	then
+	    ./rem "$this_name"
+	fi
+
+	# Eliminar primera entrada
+	matches=$((matches - 1))
+	match_names=$(echo "$match_names" | tail -$matches)
+    done
+elif [ "$matches" -eq 1 ]
+then
+    grep -v "$name" "$PHONEBOOK" > /tmp/phonebook$$
+    mv /tmp/phonebook$$ "$PHONEBOOK"
+else
+    echo "No pude encontrar $name en la agenda telefónica"
+fi
+
