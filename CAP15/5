@@ -1,0 +1,138 @@
+#Modifique la función cdh para permitir que el usuario especifique un nombre parcial de un directorio en el archivo de historial precedido por un guion:
+
+#/etc: cdh –l
+#  0 /users/pat
+#  1 /tmp
+#  2 /users/steve
+#  3 /usr/spool/uucppublic
+#  4 /usr/local/bin
+#  5 /etc
+# /etc: cdh –pub
+# /usr/spool/uucppublic: cdh –bin
+#/usr/local/bin:
+
+
+CDHIST[0]=$PWD
+
+# Toma un patrón como $1 y trata de hacer coincidirlo usando grep contra los elementos en
+# $CDHIST. Si se encuentra exactamente 1 coincidencia, entonces cambia a ese directorio,
+# de lo contrario retorna 1.
+
+cd_por_patron () {
+
+    typeset match_idx dir_patron="${1#-}"
+    typeset -i i cdlen=${#CDHIST[*]}
+
+    # Recorrer $CDHIST y revisar cada directorio para una coincidencia con
+    # $dir_patron. Cada vez que se encuentre una coincidencia, se agrega el índice a
+    # $match_idx.
+    ((i = 0))
+    while ((i < cdlen))
+    do
+	if grep "$dir_patron" <<< "${CDHIST[i]}" > /dev/null
+	then
+	    match_idx=$(echo "$match_idx $i")
+	fi
+	((i = i + 1))
+    done
+    
+    # Ajustar los parámetros posicionales a los índices de las coincidencias
+    set -- $match_idx
+
+    # Cambiar de directorio si se encuentra exactamente 1 coincidencia, si no,
+    # mostrar error
+    if [ $# -eq 0 ]
+    then
+	# caso: no se encontraron coincidencias; retorna 1
+	echo "error: no se encontraron coincidencias para $dir_patron" >&2
+	return 1
+    elif [ $# -ge 2 ]
+    then
+	# caso: se encontraron múltiples coincidencias; imprimir cada una y retorna 1
+	echo "error: se encontraron múltiples coincidencias para $dir_patron" >&2
+	for idx
+	do
+	    echo "${CDHIST[idx]}"
+	done
+	return 1
+    else
+	# caso: exactamente 1 coincidencia; cambiar a ese directorio
+	cd "${CDHIST[match_idx]}"
+	return 0
+    fi
+    
+}
+
+# uso:
+#
+#     cdh -l          <-- mostrar historial numerado de directorios
+#     cdh ruta        <-- cambiar a la ruta
+#     cdh -n          <-- cambiar al n-ésimo directorio en el historial
+#     cdh -patron     <-- cambiar al directorio en el historial que coincida con el patrón, usando grep
+
+cdh ()  {
+
+    typeset -i cdlen i 
+    typeset match_idx
+
+    if [ $# -eq 0 ]                     # por defecto ir a HOME sin argumentos
+    then
+	set -- $HOME
+    fi
+
+    cdlen=${#CDHIST[*]}                 # número de elementos en CDHIST
+
+    # Nota: hay cinco casos 'cd' para cualquier entrada que no sea un guion
+    # seguido de una secuencia de enteros: (i) cadena vacía, (ii) cualquier caso que
+    # tenga caracteres no enteros o guion, (iii) guion tras un entero,
+    # (iv) cualquier entero sin guion, y (v) guion simple.
+    case "$@" in
+
+	-l)                             # mostrar lista de directorios
+	    i=0
+	    while ((i < cdlen))
+	    do
+		printf "%3d %s\n" $i "${CDHIST[i]}"
+		((i = i + 1))
+	    done
+	    return ;;
+
+	''|*[!-0-9]*|*[0-9]-*|[0-9]*|-) # cd por ruta o patrón
+
+	    case "$@" in
+		-?*)                    # cd a nuevo directorio con patrón
+		    cd_por_patron "$@" 
+		    return ;;
+
+		*)                      # intentar hacer match de patrón en historial
+		    cd "$@" ;;
+	    esac ;;
+
+	*)                              # cd a directorio en la lista
+            # quitar guion inicial
+	    i=${1#-}
+	    if [ $i -lt $cdlen ]
+	    then
+		cd "${CDHIST[i]}" 
+	    else
+		echo "error: índice $i fuera de rango" >&2
+	    fi ;;
+	
+    esac
+
+    # Si el directorio ya está en el historial, salir sin agregarlo de nuevo.
+    # El límite superior es por el caso -n que solo maneja dígitos 0-99
+    ((i = cdlen - 1))
+    while ((0 <= i))
+    do
+	if [ "$PWD" = "${CDHIST[i]}" ]
+	then
+	    return 
+	fi
+	((i = i - 1))
+    done
+
+    # Si llegamos aquí, el directorio no está en el historial; agregarlo
+    CDHIST[cdlen]="$PWD"
+}
+
