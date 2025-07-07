@@ -1,0 +1,85 @@
+## ¿Qué pasa con mycp si uno o más archivos a copiar no existen?
+# Si uno o más archivos no existen, la llamada a cp falla.
+# Como alternativa, este programa registra los archivos inexistentes
+
+numargs=$#                       # guardar número de argumentos
+filelist=
+copylist=
+missinglist=
+
+# Procesar los argumentos, almacenando todos menos el último en filelist
+while [ "$#" -gt 1 ]
+do
+    filelist="$filelist $1"
+    shift
+done
+
+to="$1"
+
+# Si menos de dos argumentos, o si más de dos argumentos y el último argumento
+# no es un directorio, entonces mostrar mensaje de error
+if [ "$numargs" -lt 2 -o "$numargs" -gt 2 -a ! -d "$to" ]
+then
+    echo "Uso: mycp archivo1 archivo2"
+    echo "     mycp archivo(s) directorio"
+    exit 1
+fi
+
+# Recorrer cada archivo en filelist
+for from in $filelist
+do
+    # Verificar que $from exista
+    if [ ! -f "$from" ]
+    then
+        missinglist="$missinglist $from"
+        continue
+    fi
+
+    # Verificar si el destino es un directorio
+    if [ -d "$to" ]
+    then
+        tofile="$to/$(basename $from)"
+    else
+        tofile="$to"
+    fi
+
+    # Agregar el archivo a copylist si no existe en destino
+    # o si el usuario autoriza sobrescribirlo
+    if [ -e "$tofile" ]
+    then
+        printf "$tofile ya existe; ¿sobrescribir (yes/no)? "
+        read answer
+        if [ "$answer" = yes ]
+        then
+            copylist="$copylist $from"
+        fi
+    else
+        copylist="$copylist $from"
+    fi
+done
+
+# Verificar si hay archivos faltantes; si los hay, preguntar si continuar
+if [ -n "$missinglist" ]
+then
+    echo "Los siguientes archivos no existen: $missinglist"
+    if [ -n "$copylist" ]
+    then
+        printf "¿Se deben copiar los archivos restantes (yes/no)? "
+        read answer
+        if [ ! "$answer" = yes ]
+        then
+            echo "Archivos no copiados"
+            exit 0
+        fi
+    else
+        echo "No hay archivos restantes para copiar"
+        exit 0
+    fi
+fi
+
+# Ahora realizar la copia si hay archivos por copiar
+if [ -n "$copylist" ]
+then
+    cp $copylist $to             # proceder con la copia
+fi
+
