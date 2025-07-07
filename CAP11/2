@@ -1,0 +1,25 @@
+# Aquí hay dos programas llamados prog1 y prog2:
+
+# prog1
+e1=100                   # define e1=100
+export e1                # exporta e1 al entorno para procesos hijos
+e2=200                   # define e2=200 (no se exporta)
+e3=300 prog2             # define e3=300 para ejecutar prog2
+
+# prog2
+echo $e1 $e2 $e3 $e4     # imprime los valores de las variables
+
+# ¿Qué sucede al ejecutar?
+
+# $ e2=20; export e2     # define e2=20 y la exporta
+# $ e4=40 prog1          # define e4=40 solo para prog1
+
+# Análisis línea por línea:
+# - e1=100 (exportado en prog1, así que prog2 lo ve como 100)
+# - e2=200 en prog1, pero no exportado, por lo tanto prog2 hereda e2=20
+# - e3=300 se pasa temporalmente solo al ejecutar prog2
+# - e4=40 se pasa temporalmente a prog1, y prog2 lo hereda
+
+# Salida final:
+100 20 300 40
+
