@@ -1,0 +1,51 @@
+#Escriba un programa de shell llamado wgrep que busque un patrón determinado en un archivo, tal como lo hace grep.
+#Para cada línea del archivo que coincida, imprima una "ventana" alrededor de la línea coincidente. Es decir, imprima la línea anterior, la línea coincidente y la línea posterior. Asegúrese de gestionar correctamente los casos especiales en los que el patrón coincida con la primera y la última línea del archivo.
+
+#uso: wgrep patron archivo
+#Este script busca coincidencias de un patrón en un archivo
+#e imprime una ventana de contexto (línea anterior, línea encontrada, y línea posterior)
+#sobre cada coincidencia
+#Ejemplo de uso:
+#./wgrep hola archivo.txt
+
+pattern=$1
+filename=$2
+
+# Verificar que el usuario proporcionó exactamente dos argumentos
+if [ $# -ne 2 ]
+then
+    echo "Uso: wgrep patron archivo"
+    exit 1
+elif ! [ -f $filename ]
+then
+    echo "El archivo $filename no se encontró"
+    exit 1
+fi
+
+# Obtener la cantidad de líneas del archivo
+filelen=$(wc -l "$filename" | cut -d ' ' -f1)
+
+# Obtener los números de línea donde se encuentran coincidencias
+matches=$(grep -n "$pattern" "$filename" | cut -d ':' -f1)
+
+# Para cada coincidencia:
+# se imprime la línea anterior, la coincidencia y la posterior
+# usando head y tail para recortar el texto
+# Nota: si las coincidencias son consecutivas, el contexto se superpondrá
+for linum in $matches
+do
+    # Si la coincidencia está en la última línea, solo mostrar contexto de 2 líneas
+    n_diff=$(($filelen - $linum))
+    if [ 1 -le $n_diff ]
+    then
+	taillen=3
+    else
+	taillen=2
+    fi
+
+    echo '<-- inicio -->'
+    head -$(($linum + 1)) "$filename" | tail -$taillen
+    echo '<--  fin  -->'
+    echo ''
+done
+
